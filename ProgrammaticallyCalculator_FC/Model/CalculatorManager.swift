@@ -22,10 +22,6 @@ class CalculatorManager {
     var displayArray: [String] = ["0"]
     var displayFloatValue: Float? = 0
     
-    var calculatorIsClear: Bool = true
-    var isPositiveNumber: Bool = true
-    
-    var dotIsOnDisplay: Bool = false
     var waitingForNextNumberToStart: Bool? = nil
     var divisionByZeroWasMade: Bool = false
     
@@ -42,6 +38,7 @@ extension CalculatorManager: CalculatorButtonDelegate {
     func numberWasPressed(number: CalculatorNumber) {
         
         if divisionByZeroWasMade {
+            print("NaN is on display.")
             return
         }
         
@@ -57,12 +54,12 @@ extension CalculatorManager: CalculatorButtonDelegate {
             
             displayArray = []
             displayArray.append(number.rawValue)
+            
             delegate?.updateResultLabel(display: displayArray)
             
         }
         
-        else if calculatorIsClear {
-            calculatorIsClear = false
+        else if displayArray == ["0"] {
             displayArray[0] = number.rawValue
             delegate?.updateResultLabel(display: displayArray)
         }
@@ -77,10 +74,9 @@ extension CalculatorManager: CalculatorButtonDelegate {
     
     func operationWasPressed(operation: CalculatorOperation) {
         
-        if calculatorIsClear {
+        if displayArray == ["0"] && memoryFloatValue == nil {
             print("User pressed operation before defining first number.")
             return
-            
         }
         
         else {
@@ -105,7 +101,14 @@ extension CalculatorManager: CalculatorButtonDelegate {
             
         case .equal:
             
-            if calculatorIsClear {
+            
+            if divisionByZeroWasMade {
+                print("NaN is on display.")
+                return
+            }
+            
+            if displayArray == ["0"] && memoryFloatValue == nil {
+                print("User pressed equal before defining first number.")
                 return
             }
             
@@ -129,24 +132,27 @@ extension CalculatorManager: CalculatorButtonDelegate {
                 case .add:
                     
                     displayArray = String(memoryFloatValue + displayFloatValue).map { String($0) }
-                    checkForDotAndExtraZeros()
+                    checkForExtraZeros()
                     self.memoryFloatValue = nil
+                    self.operationSelected = nil
                     
                     delegate?.updateResultLabel(display: displayArray)
                     
                 case .subtract:
                     
                     displayArray = String(memoryFloatValue - displayFloatValue).map { String($0) }
-                    checkForDotAndExtraZeros()
+                    checkForExtraZeros()
                     self.memoryFloatValue = nil
+                    self.operationSelected = nil
                     
                     delegate?.updateResultLabel(display: displayArray)
                     
                 case .multiply:
                     
                     displayArray = String(memoryFloatValue * displayFloatValue).map { String($0) }
-                    checkForDotAndExtraZeros()
+                    checkForExtraZeros()
                     self.memoryFloatValue = nil
+                    self.operationSelected = nil
                     
                     delegate?.updateResultLabel(display: displayArray)
                     
@@ -159,8 +165,9 @@ extension CalculatorManager: CalculatorButtonDelegate {
                     
                     else {
                         displayArray = String(memoryFloatValue / displayFloatValue).map { String($0) }
-                        checkForDotAndExtraZeros()
+                        checkForExtraZeros()
                         self.memoryFloatValue = nil
+                        self.operationSelected = nil
                     }
                     
                     delegate?.updateResultLabel(display: displayArray)
@@ -174,11 +181,7 @@ extension CalculatorManager: CalculatorButtonDelegate {
             memoryFloatValue = nil
             displayArray = ["0"]
             displayFloatValue = 0
-            
-            calculatorIsClear = true
-            isPositiveNumber = true
-            
-            dotIsOnDisplay = false
+    
             divisionByZeroWasMade = false
             waitingForNextNumberToStart = nil
             
@@ -210,20 +213,23 @@ extension CalculatorManager: CalculatorButtonDelegate {
             
         case .changeSign:
             
+            if divisionByZeroWasMade {
+                print("NaN is on display.")
+                return
+            }
+            
             if displayArray == ["0"] {
                 print("Change signal was pressed, but zero is on display.")
                 return
             }
             
-            else if isPositiveNumber {
-                displayArray.insert("-", at: 0)
-                isPositiveNumber = false
+            else if displayArray[0] == "-" {
+                displayArray.remove(at: 0)
                 delegate?.updateResultLabel(display: displayArray)
             }
             
             else {
-                displayArray.remove(at: 0)
-                isPositiveNumber = true
+                displayArray.insert("-", at: 0)
                 delegate?.updateResultLabel(display: displayArray)
             }
             
@@ -244,9 +250,15 @@ extension CalculatorManager: CalculatorButtonDelegate {
             return
         }
         
-        else if !dotIsOnDisplay {
+        else {
+            for char in displayArray {
+                if char == "." {
+                    print("Dot was pressed, but there is already a dot on display.")
+                    return
+                }
+            }
+            
             displayArray.append(".")
-            dotIsOnDisplay = true
             delegate?.updateResultLabel(display: displayArray)
         }
         
@@ -260,21 +272,14 @@ extension CalculatorManager: CalculatorButtonDelegate {
 
 extension CalculatorManager {
     
-    func checkForDotAndExtraZeros() {
+    func checkForExtraZeros() {
+    
+        let arraySize = displayArray.count
         
-        dotIsOnDisplay = false
-        let displayArraySize = displayArray.count
-        
-        for i in 0 ..< displayArraySize {
-            
-            if displayArray[i] == "." {
-                dotIsOnDisplay = true
-                
-                if i == displayArraySize - 2 && displayArray.last == "0" {
-                    displayArray.remove(at: i+1)
-                    displayArray.remove(at: i)
-                    return
-                }
+        if displayArray[arraySize - 2] == "." {
+            if displayArray[arraySize - 1] == "0" {
+                displayArray.remove(at: arraySize - 1)
+                displayArray.remove(at: arraySize - 2)
             }
         }
     }
