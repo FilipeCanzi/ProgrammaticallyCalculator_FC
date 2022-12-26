@@ -22,10 +22,26 @@ class CalculatorManager {
     var displayArray: [String] = ["0"]
     var displayFloatValue: Float? = 0
     
-    var waitingForNextNumberToStart: Bool? = nil
     var divisionByZeroWasMade: Bool = false
+    var waitingForNextNumberToStart: Bool? = nil
     
     var operationSelected: CalculatorOperation? = nil
+    
+    
+    func resetManagerProprieties() {
+        
+        memoryFloatValue = nil
+        displayArray = ["0"]
+        displayFloatValue = 0
+
+        divisionByZeroWasMade = false
+        waitingForNextNumberToStart = nil
+        
+        operationSelected = nil
+        
+        delegate?.updateResultLabel(display: displayArray)
+        
+    }
     
     
 }
@@ -34,7 +50,7 @@ class CalculatorManager {
 // MARK: - CalculatorButtonDelegate Methods
 extension CalculatorManager: CalculatorButtonDelegate {
     
-
+    
     func numberWasPressed(number: CalculatorNumber) {
         
         if divisionByZeroWasMade {
@@ -100,97 +116,13 @@ extension CalculatorManager: CalculatorButtonDelegate {
         switch control {
             
         case .equal:
-            
-            
-            if divisionByZeroWasMade {
-                print("NaN is on display.")
-                return
-            }
-            
-            if displayArray == ["0"] && memoryFloatValue == nil {
-                print("User pressed equal before defining first number.")
-                return
-            }
-            
-            else if waitingForNextNumberToStart == nil {
-                print("User pressed equal before selecting an operation.")
-                return
-            }
-            
-            else if waitingForNextNumberToStart == true {
-                print("User pressed in an operation and them pressed equal, before selecting any number.")
-                return
-            }
-            
-            
-            displayFloatValue = Float(displayArray.joined())
-            
-            if let memoryFloatValue, let displayFloatValue, let operationSelected {
-                
-                switch operationSelected {
-                
-                case .add:
-                    
-                    displayArray = String(memoryFloatValue + displayFloatValue).map { String($0) }
-                    checkForExtraZeros()
-                    self.memoryFloatValue = nil
-                    self.operationSelected = nil
-                    
-                    delegate?.updateResultLabel(display: displayArray)
-                    
-                case .subtract:
-                    
-                    displayArray = String(memoryFloatValue - displayFloatValue).map { String($0) }
-                    checkForExtraZeros()
-                    self.memoryFloatValue = nil
-                    self.operationSelected = nil
-                    
-                    delegate?.updateResultLabel(display: displayArray)
-                    
-                case .multiply:
-                    
-                    displayArray = String(memoryFloatValue * displayFloatValue).map { String($0) }
-                    checkForExtraZeros()
-                    self.memoryFloatValue = nil
-                    self.operationSelected = nil
-                    
-                    delegate?.updateResultLabel(display: displayArray)
-                    
-                case .divide:
-                    
-                    if displayFloatValue == 0 {
-                        divisionByZeroWasMade = true
-                        displayArray = ("NaN").map { String($0) }
-                    }
-                    
-                    else {
-                        displayArray = String(memoryFloatValue / displayFloatValue).map { String($0) }
-                        checkForExtraZeros()
-                        self.memoryFloatValue = nil
-                        self.operationSelected = nil
-                    }
-                    
-                    delegate?.updateResultLabel(display: displayArray)
-                    
-                }
-            }
+            equalWasPressed()
             
 
         case .ac:
-            
-            memoryFloatValue = nil
-            displayArray = ["0"]
-            displayFloatValue = 0
-    
-            divisionByZeroWasMade = false
-            waitingForNextNumberToStart = nil
-            
-            operationSelected = nil
-            
-            delegate?.updateResultLabel(display: displayArray)
-            
-            
+            resetManagerProprieties()
 
+            
         case .percent:
             
             if divisionByZeroWasMade {
@@ -210,6 +142,7 @@ extension CalculatorManager: CalculatorButtonDelegate {
                 waitingForNextNumberToStart = false
                 controlWasPressed(control: .equal)
             }
+        
             
         case .changeSign:
             
@@ -244,12 +177,7 @@ extension CalculatorManager: CalculatorButtonDelegate {
             print("NaN is on display.")
             return
         }
-        
-        else if displayArray == ["0"] {
-            print("Dot was pressed, but zero is on display.")
-            return
-        }
-        
+                
         else {
             for char in displayArray {
                 if char == "." {
@@ -284,5 +212,89 @@ extension CalculatorManager {
         }
     }
     
+    
+}
+
+
+// MARK: - equalWasPressed Method
+
+extension CalculatorManager {
+    
+    func equalWasPressed() {
+        
+        if divisionByZeroWasMade {
+            print("NaN is on display.")
+            return
+        }
+        
+        if displayArray == ["0"] && memoryFloatValue == nil {
+            print("User pressed equal before defining first number.")
+            return
+        }
+        
+        else if waitingForNextNumberToStart == nil {
+            print("User pressed equal before selecting an operation.")
+            return
+        }
+        
+        else if waitingForNextNumberToStart == true {
+            print("User pressed in an operation and them pressed equal, before selecting any number.")
+            return
+        }
+        
+        
+        displayFloatValue = Float(displayArray.joined())
+        
+        if let memoryFloatValue, let displayFloatValue, let operationSelected {
+            
+            switch operationSelected {
+            
+            case .add:
+                
+                displayArray = String(memoryFloatValue + displayFloatValue).map { String($0) }
+                checkForExtraZeros()
+                self.memoryFloatValue = nil
+                self.operationSelected = nil
+                
+                delegate?.updateResultLabel(display: displayArray)
+                
+            case .subtract:
+                
+                displayArray = String(memoryFloatValue - displayFloatValue).map { String($0) }
+                checkForExtraZeros()
+                self.memoryFloatValue = nil
+                self.operationSelected = nil
+                
+                delegate?.updateResultLabel(display: displayArray)
+                
+            case .multiply:
+                
+                displayArray = String(memoryFloatValue * displayFloatValue).map { String($0) }
+                checkForExtraZeros()
+                self.memoryFloatValue = nil
+                self.operationSelected = nil
+                
+                delegate?.updateResultLabel(display: displayArray)
+                
+            case .divide:
+                
+                if displayFloatValue == 0 {
+                    divisionByZeroWasMade = true
+                    displayArray = ("NaN").map { String($0) }
+                }
+                
+                else {
+                    displayArray = String(memoryFloatValue / displayFloatValue).map { String($0) }
+                    checkForExtraZeros()
+                    self.memoryFloatValue = nil
+                    self.operationSelected = nil
+                }
+                
+                delegate?.updateResultLabel(display: displayArray)
+                
+            }
+        }
+        
+    }
     
 }
